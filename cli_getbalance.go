@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-func (cli *CLI) getBalance(address, nodeID string) {
+func (cli *CLI) getBalance(address, nodeID string) string {
 	if !ValidateAddress(address) {
 		log.Panic("ERROR: Address is not valid")
 	}
@@ -22,5 +22,7 @@ func (cli *CLI) getBalance(address, nodeID string) {
 		balance += out.Value
 	}
 
-	fmt.Printf("Balance of '%s': %d\n", address, balance)
+	result := fmt.Sprintf("Balance of %s: %d\n", address, balance)
+	fmt.Printf(result)
+	return result
 }

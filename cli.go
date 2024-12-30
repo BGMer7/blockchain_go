@@ -150,6 +150,15 @@ func (cli *CLI) Run() {
 			startNodeCmd.Usage()
 			os.Exit(1)
 		}
+		server := NewServer()
+		fmt.Println("gin listening in 8080")
+		r := server.setupRouter()
+		err := r.Run(":8080")
+		if err != nil {
+			log.Panic(err)
+			return
+		}
+
 		cli.startNode(nodeID, *startNodeMiner)
 	}
 }
