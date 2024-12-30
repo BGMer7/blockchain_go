@@ -40,7 +40,7 @@ blockchain_go/
 ├── go.sum                  # 依赖校验
 ├── README.md               # 项目说明文档
 └── doc.md                  # 详细文档
-
+```
 ## 关键文件说明
 
 ### 命令行入口 (`cmd/blockchain/`)
