@@ -1,32 +1,14 @@
-package main
+package routers
 
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"log"
+	"mse/internal"
+
 	"net/http"
 	"os"
 )
-
-// Request/Response structures
-type SendRequest struct {
-	From   string `json:"from" binding:"required"`
-	To     string `json:"to" binding:"required"`
-	Amount int    `json:"amount" binding:"required"`
-	Mine   bool   `json:"mine"`
-}
-
-type CreateBlockchainRequest struct {
-	Address string `json:"address" binding:"required"`
-}
-
-type BalanceRequest struct {
-	Address string `json:"address" binding:"required"`
-}
-
-type NodeStartRequest struct {
-	MinerAddress string `json:"minerAddress"`
-}
 
 type Response struct {
 	Success bool        `json:"success"`
@@ -36,8 +18,9 @@ type Response struct {
 
 // Server structure
 type Server struct {
-	h      *Handler
 	nodeID string
+	bch    *internal.BlockchainHandler
+	wh     *internal.WalletHandler
 }
 
 func NewServer() *Server {
@@ -46,12 +29,13 @@ func NewServer() *Server {
 		log.Fatal("NODE_ID env. var is not set!")
 	}
 	return &Server{
-		h:      NewHandler(),
+		wh:     internal.NewWalletHandler(),
+		bch:    internal.NewBlockchainHandler(),
 		nodeID: nodeID,
 	}
 }
 
-func (s *Server) setupRouter() *gin.Engine {
+func (s *Server) SetupRouter() *gin.Engine {
 	r := gin.Default()
 
 	// step1: create a wallet
@@ -84,7 +68,7 @@ func (s *Server) setupRouter() *gin.Engine {
 func (s *Server) getBalance(c *gin.Context) {
 	address := c.Param("address")
 	nodeId := c.Param("nodeId")
-	balance := s.h.getBalance(address, nodeId)
+	balance := s.wh.GetBalance(address, nodeId)
 	c.JSON(http.StatusOK, Response{
 		Success: true,
 		Data: gin.H{
@@ -97,7 +81,7 @@ func (s *Server) getBalance(c *gin.Context) {
 func (s *Server) printChain(c *gin.Context) {
 	nodeId := c.Param("nodeId")
 	fmt.Println("nodeId: ", nodeId)
-	chain := s.h.printChain(nodeId)
+	chain := s.bch.PrintChain(nodeId)
 	c.JSON(http.StatusOK, Response{
 		Success: true,
 		Data: gin.H{
@@ -109,7 +93,7 @@ func (s *Server) printChain(c *gin.Context) {
 
 func (s *Server) createWallet(c *gin.Context) {
 	nodeId := c.Param("nodeId")
-	address := s.h.createWallet(nodeId)
+	address := s.wh.CreateWallet(nodeId)
 	c.JSON(http.StatusOK, Response{
 		Success: true,
 		Data: gin.H{
@@ -122,7 +106,7 @@ func (s *Server) createWallet(c *gin.Context) {
 func (s *Server) createBlockchain(c *gin.Context) {
 	address := c.Param("address")
 	nodeId := c.Param("nodeId")
-	s.h.createBlockchain(address, nodeId)
+	s.bch.CreateBlockchain(address, nodeId)
 	c.JSON(http.StatusOK, Response{
 		Success: true,
 		Data: gin.H{
@@ -134,7 +118,7 @@ func (s *Server) createBlockchain(c *gin.Context) {
 
 func (s *Server) listAddresses(c *gin.Context) {
 	nodeId := c.Param("nodeId")
-	addresses := s.h.listAddresses(nodeId)
+	addresses := s.wh.ListAddresses(nodeId)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -151,7 +135,6 @@ func (s *Server) send(c *gin.Context) {
 		Mine   bool   `json:"mine,omitempty"`                 // 可选字段，默认值为 false
 	}
 
-	// 解析请求体中的 JSON 数据
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"success": false,
@@ -161,10 +144,8 @@ func (s *Server) send(c *gin.Context) {
 		return
 	}
 
-	// 处理交易逻辑，例如调用发送交易的函数
-	s.h.send(req.From, req.To, req.Amount, nodeId, req.Mine)
+	s.wh.Send(req.From, req.To, req.Amount, nodeId, req.Mine)
 
-	// 模拟成功的响应
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Transaction sent successfully",
@@ -173,7 +154,7 @@ func (s *Server) send(c *gin.Context) {
 
 func (s *Server) reindexUTXO(c *gin.Context) {
 	nodeId := c.Param("nodeId")
-	count := s.h.reindexUTXO(nodeId)
+	count := s.bch.ReindexUTXO(nodeId)
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    count,
@@ -183,9 +164,9 @@ func (s *Server) reindexUTXO(c *gin.Context) {
 // getLastTransaction handles the request to retrieve the most recent transaction
 func (s *Server) getLastTransaction(c *gin.Context) {
 	nodeID := c.Param("nodeId")
-	bc := NewBlockchain(nodeID)
+	bc := s.bch.NewBlockchain(nodeID)
 
-	lastTx := s.h.GetLastTransaction(bc)
+	lastTx := s.bch.GetLastTransaction(bc)
 	if lastTx == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -197,7 +178,7 @@ func (s *Server) getLastTransaction(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"transaction": gin.H{
-			"lastTx:": lastTx.String(),
+			"lastTx:": lastTx.ToJSON(),
 		},
 	})
 }

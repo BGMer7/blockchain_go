@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func (cli *CLI) printChain() {
+func (cli *CLI) printChain() string {
 	bc := blockchain.NewBlockchain(cli.nodeID)
 	defer bc.DB.Close()
 
@@ -31,7 +31,7 @@ func (cli *CLI) printChain() {
 		fmt.Print(blockInfo)
 		output.WriteString(blockInfo)
 
-		pow := NewProofOfWork(block)
+		pow := blockchain.NewProofOfWork(block)
 		powInfo := fmt.Sprintf("PoW: %s\n\n", strconv.FormatBool(pow.Validate()))
 		fmt.Print(powInfo)
 		output.WriteString(powInfo)
