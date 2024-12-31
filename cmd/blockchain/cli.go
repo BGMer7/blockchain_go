@@ -146,10 +146,27 @@ func (cli *CLI) Run() {
 			startNodeCmd.Usage()
 			os.Exit(1)
 		}
+
+		// 删除 data 文件夹
+		dataDir := "./data"
+		if _, err := os.Stat(dataDir); !os.IsNotExist(err) {
+			err := os.RemoveAll(dataDir)
+			if err != nil {
+				log.Printf("Error removing data directory: %v", err)
+			} else {
+				fmt.Println("Removed existing data directory")
+			}
+		}
+
+		// 重新创建 data 文件夹
+		err := os.MkdirAll(dataDir, 0755)
+		if err != nil {
+			log.Printf("Error creating data directory: %v", err)
+		}
+
 		server := routers.NewServer()
-		fmt.Println("gin listening in 8080")
 		r := server.SetupRouter()
-		err := r.Run(":3" + nodeID)
+		err = r.Run(":3" + nodeID)
 		if err != nil {
 			log.Panic(err)
 			return

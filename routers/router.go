@@ -2,6 +2,7 @@ package routers
 
 import (
 	"fmt"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"log"
 	"mse/internal"
@@ -38,29 +39,44 @@ func NewServer() *Server {
 func (s *Server) SetupRouter() *gin.Engine {
 	r := gin.Default()
 
-	// step1: create a wallet
-	r.POST("/wallet/:nodeId", s.createWallet)
+	// 配置 CORS
+	r.Use(cors.Default())
 
-	// step2:create a blockchain
-	r.POST("/blockchain/:address/:nodeId", s.createBlockchain)
+	// API 路由组
+	api := r.Group("/api")
+	{
+		// step1: create a wallet
+		api.POST("/wallet/:nodeId", s.createWallet)
 
-	// step3: list the blockchain
-	r.GET("/chain/:nodeId", s.printChain)
+		// step2:create a blockchain
+		api.POST("/blockchain/:address/:nodeId", s.createBlockchain)
 
-	// step4: query the balance
-	r.GET("/balance/:address/:nodeId", s.getBalance)
+		// step3: list the blockchain
+		api.GET("/chain/:nodeId", s.printChain)
 
-	// step5: list the addresses
-	r.GET("/addresses/:nodeId", s.listAddresses)
+		// step4: query the balance
+		api.GET("/balance/:address/:nodeId", s.getBalance)
 
-	// step6: transaction
-	r.POST("/send/:nodeId", s.send)
+		// step5: list the addresses
+		api.GET("/addresses/:nodeId", s.listAddresses)
 
-	// step7: query the latest transaction
-	r.GET("/latestTx/:nodeId", s.getLastTransaction)
+		// step6: transaction
+		api.POST("/send/:nodeId", s.send)
 
-	// step8:
-	r.GET("/txCount/:nodeId", s.reindexUTXO)
+		// step7: query the latest transaction
+		api.GET("/latestTx/:nodeId", s.getLastTransaction)
+
+		// step8:
+		api.GET("/txCount/:nodeId", s.reindexUTXO)
+	}
+
+	// 显式处理静态文件
+	r.GET("/", func(c *gin.Context) {
+		c.File("./static/index.html")
+	})
+
+	// 处理其他静态文件
+	r.Static("/static", "./static")
 
 	return r
 }

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Go 区块链管理</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding-top: 20px; }
+        .card { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Go 区块链管理系统</h1>
+        
+        <div class="row">
+            <!-- 钱包管理 -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">钱包管理</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="nodeIdWallet" class="form-label">节点ID</label>
+                            <input type="text" class="form-control" id="nodeIdWallet" placeholder="例如: 3000">
+                        </div>
+                        <button id="createWalletBtn" class="btn btn-primary">创建钱包</button>
+                        <div id="walletResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 区块链管理 -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">区块链管理</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="blockchainAddress" class="form-label">钱包地址</label>
+                            <input type="text" class="form-control" id="blockchainAddress" placeholder="创世区块地址">
+                        </div>
+                        <div class="mb-3">
+                            <label for="nodeIdBlockchain" class="form-label">节点ID</label>
+                            <input type="text" class="form-control" id="nodeIdBlockchain" placeholder="例如: 3000">
+                        </div>
+                        <button id="createBlockchainBtn" class="btn btn-success">创建区块链</button>
+                        <button id="listChainBtn" class="btn btn-info ms-2">列出区块链</button>
+                        <div id="blockchainResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 交易管理 -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">交易管理</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="fromAddress" class="form-label">发送方地址</label>
+                            <input type="text" class="form-control" id="fromAddress" placeholder="发送方钱包地址">
+                        </div>
+                        <div class="mb-3">
+                            <label for="toAddress" class="form-label">接收方地址</label>
+                            <input type="text" class="form-control" id="toAddress" placeholder="接收方钱包地址">
+                        </div>
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">交易金额</label>
+                            <input type="number" class="form-control" id="amount" placeholder="交易金额">
+                        </div>
+                        <div class="mb-3">
+                            <label for="nodeIdTx" class="form-label">节点ID</label>
+                            <input type="text" class="form-control" id="nodeIdTx" placeholder="例如: 3000">
+                        </div>
+                        <button id="sendTxBtn" class="btn btn-warning">发起交易</button>
+                        <button id="getBalanceBtn" class="btn btn-secondary ms-2">查询余额</button>
+                        <div id="txResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 其他功能 -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">地址列表</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="nodeIdAddresses" class="form-label">节点ID</label>
+                            <input type="text" class="form-control" id="nodeIdAddresses" placeholder="例如: 3000">
+                        </div>
+                        <button id="listAddressesBtn" class="btn btn-info">列出地址</button>
+                        <div id="addressesResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">最新交易</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="nodeIdLatestTx" class="form-label">节点ID</label>
+                            <input type="text" class="form-control" id="nodeIdLatestTx" placeholder="例如: 3000">
+                        </div>
+                        <button id="latestTxBtn" class="btn btn-info">查询最新交易</button>
+                        <div id="latestTxResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 基础 API 地址（假设后端运行在 localhost:33000）
+        const BASE_URL = '/api';
+
+        // 创建钱包
+        document.getElementById('createWalletBtn').addEventListener('click', async () => {
+            const nodeId = document.getElementById('nodeIdWallet').value;
+            try {
+                const response = await fetch(`${BASE_URL}/wallet/${nodeId}`, { method: 'POST' });
+                const result = await response.json();
+                
+                // 如果钱包创建成功，保存到历史记录
+                if (result.success) {
+                    const walletAddress = result.data.data;
+                    
+                    // 获取现有的钱包历史记录
+                    let walletHistory = JSON.parse(localStorage.getItem('walletHistory') || '[]');
+                    
+                    // 检查是否已存在相同的钱包地址
+                    const addressExists = walletHistory.some(entry => entry.address === walletAddress);
+                    
+                    // 如果地址不存在，则添加
+                    if (!addressExists) {
+                        walletHistory.push({
+                            address: walletAddress,
+                            nodeId: nodeId,
+                            timestamp: new Date().toISOString()
+                        });
+                        
+                        // 保存更新后的历史记录
+                        localStorage.setItem('walletHistory', JSON.stringify(walletHistory));
+                    }
+                    
+                    // 显示钱包创建结果和历史记录
+                    const resultHtml = `
+                        <p>钱包创建成功: ${walletAddress}</p>
+                        <h6>钱包历史记录:</h6>
+                        <ul class="list-group">
+                            ${walletHistory.map(entry => `
+                                <li class="list-group-item">
+                                    地址: ${entry.address} 
+                                    (节点: ${entry.nodeId}, 
+                                    创建时间: ${new Date(entry.timestamp).toLocaleString()})
+                                </li>
+                            `).join('')}
+                        </ul>
+                    `;
+                    
+                    document.getElementById('walletResult').innerHTML = resultHtml;
+                } else {
+                    document.getElementById('walletResult').innerHTML = '钱包创建失败';
+                }
+            } catch (error) {
+                document.getElementById('walletResult').innerHTML = `错误: ${error.message}`;
+            }
+        });
+
+        // 创建区块链
+        document.getElementById('createBlockchainBtn').addEventListener('click', async () => {
+            const address = document.getElementById('blockchainAddress').value;
+            const nodeId = document.getElementById('nodeIdBlockchain').value;
+            try {
+                const response = await fetch(`${BASE_URL}/blockchain/${address}/${nodeId}`, { method: 'POST' });
+                const result = await response.json();
+                document.getElementById('blockchainResult').innerHTML = result.success 
+                    ? result.data.data 
+                    : '区块链创建失败';
+            } catch (error) {
+                document.getElementById('blockchainResult').innerHTML = `错误: ${error.message}`;
+            }
+        });
+
+        // 列出区块链
+        document.getElementById('listChainBtn').addEventListener('click', async () => {
+            const nodeId = document.getElementById('nodeIdBlockchain').value;
+            try {
+                const response = await fetch(`${BASE_URL}/chain/${nodeId}`);
+                const result = await response.json();
+                document.getElementById('blockchainResult').innerHTML = JSON.stringify(result.data, null, 2);
+            } catch (error) {
+                document.getElementById('blockchainResult').innerHTML = `错误: ${error.message}`;
+            }
+        });
+
+        // 发起交易
+        document.getElementById('sendTxBtn').addEventListener('click', async () => {
+            const from = document.getElementById('fromAddress').value;
+            const to = document.getElementById('toAddress').value;
+            const amount = document.getElementById('amount').value;
+            const nodeId = document.getElementById('nodeIdTx').value;
+            try {
+                const response = await fetch(`${BASE_URL}/send/${nodeId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ from, to, amount, mine: true })
+                });
+                const result = await response.json();
+                document.getElementById('txResult').innerHTML = result.success 
+                    ? '交易发起成功' 
+                    : '交易发起失败';
+            } catch (error) {
+                document.getElementById('txResult').innerHTML = `错误: ${error.message}`;
+            }
+        });
+
+        // 查询余额
+        document.getElementById('getBalanceBtn').addEventListener('click', async () => {
+            const address = document.getElementById('fromAddress').value;
+            const nodeId = document.getElementById('nodeIdTx').value;
+            try {
+                const response = await fetch(`${BASE_URL}/balance/${address}/${nodeId}`);
+                const result = await response.json();
+                document.getElementById('txResult').innerHTML = `余额: ${result.data.data}`;
+            } catch (error) {
+                document.getElementById('txResult').innerHTML = `错误: ${error.message}`;
+            }
+        });
+
+        // 列出地址
+        document.getElementById('listAddressesBtn').addEventListener('click', async () => {
+            const nodeId = document.getElementById('nodeIdAddresses').value;
+            try {
+                const response = await fetch(`${BASE_URL}/addresses/${nodeId}`);
+                const result = await response.json();
+                document.getElementById('addressesResult').innerHTML = JSON.stringify(result.data, null, 2);
+            } catch (error) {
+                document.getElementById('addressesResult').innerHTML = `错误: ${error.message}`;
+            }
+        });
+
+        // 查询最新交易
+        document.getElementById('latestTxBtn').addEventListener('click', async () => {
+            const nodeId = document.getElementById('nodeIdLatestTx').value;
+            try {
+                const response = await fetch(`${BASE_URL}/latestTx/${nodeId}`);
+                const result = await response.json();
+                document.getElementById('latestTxResult').innerHTML = JSON.stringify(result.transaction, null, 2);
+            } catch (error) {
+                document.getElementById('latestTxResult').innerHTML = `错误: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
