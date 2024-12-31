@@ -1,3 +1,6 @@
+// 从当前页面的端口提取 NODE_ID
+const NODE_ID = window.location.port.slice(1);  // 去掉端口号前的 '3'
+
 // 基础 API 地址
 const BASE_URL = '/api';
 
@@ -6,9 +9,8 @@ let walletHistory = [];
 
 // 创建钱包
 document.getElementById('createWalletBtn').addEventListener('click', async () => {
-    const nodeId = document.getElementById('nodeIdWallet').value;
     try {
-        const response = await fetch(`${BASE_URL}/wallet/${nodeId}`, { method: 'POST' });
+        const response = await fetch(`${BASE_URL}/wallet/${NODE_ID}`, { method: 'POST' });
         const result = await response.json();
         
         // 如果钱包创建成功，保存到历史记录
@@ -22,7 +24,7 @@ document.getElementById('createWalletBtn').addEventListener('click', async () =>
             if (!addressExists) {
                 walletHistory.push({
                     address: walletAddress,
-                    nodeId: nodeId,
+                    nodeId: NODE_ID,
                     timestamp: new Date().toISOString()
                 });
             }
@@ -54,9 +56,8 @@ document.getElementById('createWalletBtn').addEventListener('click', async () =>
 // 创建区块链
 document.getElementById('createBlockchainBtn').addEventListener('click', async () => {
     const address = document.getElementById('blockchainAddress').value;
-    const nodeId = document.getElementById('nodeIdBlockchain').value;
     try {
-        const response = await fetch(`${BASE_URL}/blockchain/${address}/${nodeId}`, { method: 'POST' });
+        const response = await fetch(`${BASE_URL}/blockchain/${address}/${NODE_ID}`, { method: 'POST' });
         const result = await response.json();
         document.getElementById('blockchainResult').innerHTML = result.success 
             ? result.data.data 
@@ -68,9 +69,8 @@ document.getElementById('createBlockchainBtn').addEventListener('click', async (
 
 // 列出区块链
 document.getElementById('listChainBtn').addEventListener('click', async () => {
-    const nodeId = document.getElementById('nodeIdBlockchain').value;
     try {
-        const response = await fetch(`${BASE_URL}/chain/${nodeId}`);
+        const response = await fetch(`${BASE_URL}/chain/${NODE_ID}`);
         const result = await response.json();
         document.getElementById('blockchainResult').innerHTML = JSON.stringify(result.data, null, 2);
     } catch (error) {
@@ -83,9 +83,8 @@ document.getElementById('sendTxBtn').addEventListener('click', async () => {
     const from = document.getElementById('fromAddress').value;
     const to = document.getElementById('toAddress').value;
     const amount = document.getElementById('amount').value;
-    const nodeId = document.getElementById('nodeIdTx').value;
     try {
-        const response = await fetch(`${BASE_URL}/send/${nodeId}`, {
+        const response = await fetch(`${BASE_URL}/send/${NODE_ID}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ from, to, amount, mine: true })
@@ -102,9 +101,8 @@ document.getElementById('sendTxBtn').addEventListener('click', async () => {
 // 查询余额
 document.getElementById('getBalanceBtn').addEventListener('click', async () => {
     const address = document.getElementById('fromAddress').value;
-    const nodeId = document.getElementById('nodeIdTx').value;
     try {
-        const response = await fetch(`${BASE_URL}/balance/${address}/${nodeId}`);
+        const response = await fetch(`${BASE_URL}/balance/${address}/${NODE_ID}`);
         const result = await response.json();
         document.getElementById('txResult').innerHTML = `余额: ${result.data.data}`;
     } catch (error) {
@@ -114,9 +112,8 @@ document.getElementById('getBalanceBtn').addEventListener('click', async () => {
 
 // 列出地址
 document.getElementById('listAddressesBtn').addEventListener('click', async () => {
-    const nodeId = document.getElementById('nodeIdAddresses').value;
     try {
-        const response = await fetch(`${BASE_URL}/addresses/${nodeId}`);
+        const response = await fetch(`${BASE_URL}/addresses/${NODE_ID}`);
         const result = await response.json();
         document.getElementById('addressesResult').innerHTML = JSON.stringify(result.data, null, 2);
     } catch (error) {
@@ -126,9 +123,8 @@ document.getElementById('listAddressesBtn').addEventListener('click', async () =
 
 // 最新交易
 document.getElementById('latestTxBtn').addEventListener('click', async () => {
-    const nodeId = document.getElementById('nodeIdLatestTx').value;
     try {
-        const response = await fetch(`${BASE_URL}/latestTx/${nodeId}`);
+        const response = await fetch(`${BASE_URL}/latestTx/${NODE_ID}`);
         const result = await response.json();
         document.getElementById('latestTxResult').innerHTML = JSON.stringify(result.data, null, 2);
     } catch (error) {
