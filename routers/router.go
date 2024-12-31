@@ -8,8 +8,10 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
+	"encoding/hex"
 	"net/http"
 	"os"
+	"time"
 )
 
 type Response struct {
@@ -196,10 +198,19 @@ func (s *Server) getLastTransaction(c *gin.Context) {
 		return
 	}
 
+	// 美化交易信息
+	txInfo := map[string]interface{}{
+		"id":        hex.EncodeToString(lastTx.ID),
+		"inputs":    len(lastTx.Vin),
+		"outputs":   len(lastTx.Vout),
+		"timestamp": time.Now().Unix(), // 可以考虑在交易结构中添加时间戳
+		"details":   lastTx.ToJSON(),
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"transaction": gin.H{
-			"lastTx:": lastTx.ToJSON(),
+		"data": gin.H{
+			"transaction": txInfo,
 		},
 	})
 }

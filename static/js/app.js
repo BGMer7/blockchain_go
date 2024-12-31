@@ -168,8 +168,56 @@ document.getElementById('latestTxBtn').addEventListener('click', async () => {
     try {
         const response = await fetch(`${BASE_URL}/latestTx/${NODE_ID}`);
         const result = await response.json();
-        document.getElementById('latestTxResult').innerHTML = JSON.stringify(result.data, null, 2);
+        
+        if (result.success && result.data && result.data.transaction) {
+            const tx = result.data.transaction;
+            const txHtml = `
+                <div class="card">
+                    <div class="card-header bg-primary text-white">最新交易详情</div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>交易ID:</strong>
+                                <code class="text-break">${tx.id}</code>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>时间:</strong>
+                                ${new Date(tx.timestamp * 1000).toLocaleString()}
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>输入数量:</strong>
+                                <span class="badge bg-info">${tx.inputs}</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>输出数量:</strong>
+                                <span class="badge bg-success">${tx.outputs}</span>
+                            </div>
+                        </div>
+                        <hr>
+                        <details>
+                            <summary>交易详细信息</summary>
+                            <pre class="bg-light p-3 rounded">${JSON.stringify(tx.details, null, 2)}</pre>
+                        </details>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('latestTxResult').innerHTML = txHtml;
+        } else {
+            document.getElementById('latestTxResult').innerHTML = `
+                <div class="alert alert-warning">
+                    ${result.message || '未找到最新交易'}
+                </div>
+            `;
+        }
     } catch (error) {
-        document.getElementById('latestTxResult').innerHTML = `错误: ${error.message}`;
+        document.getElementById('latestTxResult').innerHTML = `
+            <div class="alert alert-danger">
+                错误: ${error.message}
+            </div>
+        `;
     }
 });
