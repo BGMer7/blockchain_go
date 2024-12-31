@@ -72,8 +72,38 @@ document.getElementById('listChainBtn').addEventListener('click', async () => {
     try {
         const response = await fetch(`${BASE_URL}/chain/${NODE_ID}`);
         const result = await response.json();
-        document.getElementById('blockchainResult').innerHTML = JSON.stringify(result.data, null, 2);
+        
+        // 调试：打印完整的返回结果
+        console.log('Chain Result:', result);
+        
+        // 尝试处理不同的数据格式
+        let chainData;
+        if (result.data && result.data.data) {
+            // 如果 data 是对象，直接使用
+            if (typeof result.data.data === 'object') {
+                chainData = result.data.data;
+            } 
+            // 如果 data 是 JSON 字符串，解析它
+            else if (typeof result.data.data === 'string') {
+                try {
+                    chainData = JSON.parse(result.data.data);
+                } catch (parseError) {
+                    chainData = result.data.data;
+                }
+            }
+        } else {
+            // 如果没有 data 字段，使用整个结果
+            chainData = result;
+        }
+        
+        // 格式化并显示数据
+        const formattedChain = JSON.stringify(chainData, null, 2);
+        
+        document.getElementById('blockchainResult').innerHTML = `
+            <pre class="bg-light p-3 rounded">${formattedChain}</pre>
+        `;
     } catch (error) {
+        console.error('Error fetching chain:', error);
         document.getElementById('blockchainResult').innerHTML = `错误: ${error.message}`;
     }
 });
@@ -82,17 +112,29 @@ document.getElementById('listChainBtn').addEventListener('click', async () => {
 document.getElementById('sendTxBtn').addEventListener('click', async () => {
     const from = document.getElementById('fromAddress').value;
     const to = document.getElementById('toAddress').value;
-    const amount = document.getElementById('amount').value;
+    const amount = parseInt(document.getElementById('amount').value, 10);  // 转换为整数
+    
+    // 验证输入
+    if (isNaN(amount) || amount <= 0) {
+        document.getElementById('txResult').innerHTML = '错误：请输入有效的交易金额';
+        return;
+    }
+
     try {
         const response = await fetch(`${BASE_URL}/send/${NODE_ID}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ from, to, amount, mine: true })
+            body: JSON.stringify({ 
+                from, 
+                to, 
+                amount,  // 现在是整数 
+                mine: true 
+            })
         });
         const result = await response.json();
         document.getElementById('txResult').innerHTML = result.success 
             ? '交易发起成功' 
-            : '交易发起失败';
+            : `交易发起失败: ${result.message || '未知错误'}`;
     } catch (error) {
         document.getElementById('txResult').innerHTML = `错误: ${error.message}`;
     }
