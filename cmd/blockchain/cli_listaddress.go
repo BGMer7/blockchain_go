@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"log"
+
+	"mse/internal/wallet"
 )
 
-func (cli *CLI) listAddresses(nodeID string) []string {
-	wallets, err := NewWallets(nodeID)
+func (cli *CLI) listAddresses() {
+	wallets, err := wallet.NewWallets(cli.nodeID)
 	if err != nil {
 		log.Panic(err)
 	}

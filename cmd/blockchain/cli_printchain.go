@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"strconv"
+
+	"mse/internal/blockchain"
 	"strings"
 )
 
-func (cli *CLI) printChain(nodeID string) string {
-	bc := NewBlockchain(nodeID)
-	defer bc.db.Close()
+func (cli *CLI) printChain() {
+	bc := blockchain.NewBlockchain(cli.nodeID)
+	defer bc.DB.Close()
 
 	bci := bc.Iterator()
 

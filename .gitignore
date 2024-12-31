@@ -1,2 +1,8 @@
+# Data files
+data/
 *.db
 *.dat
+
+# Binary files
+blockchain_go
+./blockchain

@@ -4,12 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"log"
-
 	"os"
 )
 
 // CLI responsible for processing command line arguments
-type CLI struct{}
+type CLI struct {
+	nodeID string
+}
 
 func (cli *CLI) printUsage() {
 	fmt.Println("Usage:")
@@ -33,12 +34,6 @@ func (cli *CLI) validateArgs() {
 // Run parses command line arguments and processes commands
 func (cli *CLI) Run() {
 	cli.validateArgs()
-
-	nodeID := os.Getenv("NODE_ID")
-	if nodeID == "" {
-		fmt.Printf("NODE_ID env. var is not set!")
-		os.Exit(1)
-	}
 
 	getBalanceCmd := flag.NewFlagSet("getbalance", flag.ExitOnError)
 	createBlockchainCmd := flag.NewFlagSet("createblockchain", flag.ExitOnError)
@@ -108,7 +103,7 @@ func (cli *CLI) Run() {
 			getBalanceCmd.Usage()
 			os.Exit(1)
 		}
-		cli.getBalance(*getBalanceAddress, nodeID)
+		cli.getBalance(*getBalanceAddress)
 	}
 
 	if createBlockchainCmd.Parsed() {
@@ -116,23 +111,23 @@ func (cli *CLI) Run() {
 			createBlockchainCmd.Usage()
 			os.Exit(1)
 		}
-		cli.createBlockchain(*createBlockchainAddress, nodeID)
+		cli.createBlockchain(*createBlockchainAddress)
 	}
 
 	if createWalletCmd.Parsed() {
-		cli.createWallet(nodeID)
+		cli.createWallet()
 	}
 
 	if listAddressesCmd.Parsed() {
-		cli.listAddresses(nodeID)
+		cli.listAddresses()
 	}
 
 	if printChainCmd.Parsed() {
-		cli.printChain(nodeID)
+		cli.printChain()
 	}
 
 	if reindexUTXOCmd.Parsed() {
-		cli.reindexUTXO(nodeID)
+		cli.reindexUTXO()
 	}
 
 	if sendCmd.Parsed() {
@@ -141,7 +136,7 @@ func (cli *CLI) Run() {
 			os.Exit(1)
 		}
 
-		cli.send(*sendFrom, *sendTo, *sendAmount, nodeID, *sendMine)
+		cli.send(*sendFrom, *sendTo, *sendAmount, *sendMine)
 	}
 
 	if startNodeCmd.Parsed() {
