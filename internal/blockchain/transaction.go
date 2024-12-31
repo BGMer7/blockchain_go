@@ -26,12 +26,12 @@ type Transaction struct {
 }
 
 // IsCoinbase checks whether the transaction is coinbase
-func (tx Transaction) IsCoinbase() bool {
+func (tx *Transaction) IsCoinbase() bool {
 	return len(tx.Vin) == 1 && len(tx.Vin[0].Txid) == 0 && tx.Vin[0].Vout == -1
 }
 
 // Serialize returns a serialized Transaction
-func (tx Transaction) Serialize() []byte {
+func (tx *Transaction) Serialize() []byte {
 	var encoded bytes.Buffer
 
 	enc := gob.NewEncoder(&encoded)
@@ -88,7 +88,7 @@ func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transac
 }
 
 // String returns a human-readable representation of a transaction
-func (tx Transaction) String() string {
+func (tx *Transaction) String() string {
 	var lines []string
 
 	lines = append(lines, fmt.Sprintf("--- Transaction %x:", tx.ID))
@@ -108,6 +108,36 @@ func (tx Transaction) String() string {
 	}
 
 	return strings.Join(lines, "\n")
+}
+
+// ToJSON converts a Transaction to a JSON-friendly map
+func (tx *Transaction) ToJSON() map[string]interface{} {
+	// Convert inputs to JSON-friendly format
+	inputs := make([]map[string]interface{}, len(tx.Vin))
+	for i, input := range tx.Vin {
+		inputs[i] = map[string]interface{}{
+			"txid":      fmt.Sprintf("%x", input.Txid),
+			"out":       input.Vout,
+			"signature": fmt.Sprintf("%x", input.Signature),
+			"pubKey":    fmt.Sprintf("%x", input.PubKey),
+		}
+	}
+
+	// Convert outputs to JSON-friendly format
+	outputs := make([]map[string]interface{}, len(tx.Vout))
+	for i, output := range tx.Vout {
+		outputs[i] = map[string]interface{}{
+			"value":  output.Value,
+			"script": fmt.Sprintf("%x", output.PubKeyHash),
+		}
+	}
+
+	// Build the final JSON structure
+	return map[string]interface{}{
+		"id":   fmt.Sprintf("%x", tx.ID),
+		"vin":  inputs,
+		"vout": outputs,
+	}
 }
 
 // TrimmedCopy creates a trimmed copy of Transaction to be used in signing
