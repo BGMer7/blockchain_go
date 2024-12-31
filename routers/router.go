@@ -2,10 +2,11 @@ package routers
 
 import (
 	"fmt"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 	"log"
 	"mse/internal"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 
 	"net/http"
 	"os"
@@ -73,6 +74,10 @@ func (s *Server) SetupRouter() *gin.Engine {
 	// 显式处理静态文件
 	r.GET("/", func(c *gin.Context) {
 		c.File("./static/index.html")
+	})
+
+	r.GET("/js/app.js", func(c *gin.Context) {
+		c.File("./static/js/app.js")
 	})
 
 	// 处理其他静态文件
