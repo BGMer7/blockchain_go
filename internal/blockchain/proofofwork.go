@@ -59,6 +59,7 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 
 		hash = sha256.Sum256(data)
 		if math.Remainder(float64(nonce), 100000) == 0 {
+			// only print the hash as a record, no returning
 			fmt.Printf("\r%x", hash)
 		}
 		hashInt.SetBytes(hash[:])

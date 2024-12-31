@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"mse/routers"
 	"os"
 )
 
@@ -140,6 +141,20 @@ func (cli *CLI) Run() {
 	}
 
 	if startNodeCmd.Parsed() {
+		nodeID := os.Getenv("NODE_ID")
+		if nodeID == "" {
+			startNodeCmd.Usage()
+			os.Exit(1)
+		}
+		server := routers.NewServer()
+		fmt.Println("gin listening in 8080")
+		r := server.SetupRouter()
+		err := r.Run(":3" + nodeID)
+		if err != nil {
+			log.Panic(err)
+			return
+		}
+
 		cli.startNode(*startNodeMiner)
 	}
 }

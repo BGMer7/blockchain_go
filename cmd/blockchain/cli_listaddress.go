@@ -7,7 +7,7 @@ import (
 	"mse/internal/wallet"
 )
 
-func (cli *CLI) listAddresses() {
+func (cli *CLI) listAddresses() []string {
 	wallets, err := wallet.NewWallets(cli.nodeID)
 	if err != nil {
 		log.Panic(err)
@@ -17,4 +17,6 @@ func (cli *CLI) listAddresses() {
 	for _, address := range addresses {
 		fmt.Println(address)
 	}
+
+	return addresses
 }
