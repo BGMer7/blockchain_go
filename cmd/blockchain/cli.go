@@ -6,6 +6,7 @@ import (
 	"log"
 	"mse/routers"
 	"os"
+	"path/filepath"
 )
 
 // CLI responsible for processing command line arguments
@@ -147,26 +148,34 @@ func (cli *CLI) Run() {
 			os.Exit(1)
 		}
 
-		// 删除 data 文件夹
+		// 删除特定节点ID对应的数据库和数据文件
 		dataDir := "./data"
-		if _, err := os.Stat(dataDir); !os.IsNotExist(err) {
-			err := os.RemoveAll(dataDir)
+		dbFile := filepath.Join(dataDir, fmt.Sprintf("blockchain_%s.db", nodeID))
+		datFile := filepath.Join(dataDir, fmt.Sprintf("wallet_%s.dat", nodeID))
+
+		// 删除数据库文件
+		if _, err := os.Stat(dbFile); !os.IsNotExist(err) {
+			err := os.Remove(dbFile)
 			if err != nil {
-				log.Printf("Error removing data directory: %v", err)
+				log.Printf("Error removing database file: %v", err)
 			} else {
-				fmt.Println("Removed existing data directory")
+				fmt.Printf("Removed database file for node %s\n", nodeID)
 			}
 		}
 
-		// 重新创建 data 文件夹
-		err := os.MkdirAll(dataDir, 0755)
-		if err != nil {
-			log.Printf("Error creating data directory: %v", err)
+		// 删除数据文件
+		if _, err := os.Stat(datFile); !os.IsNotExist(err) {
+			err := os.Remove(datFile)
+			if err != nil {
+				log.Printf("Error removing data file: %v", err)
+			} else {
+				fmt.Printf("Removed data file for node %s\n", nodeID)
+			}
 		}
 
 		server := routers.NewServer()
 		r := server.SetupRouter()
-		err = r.Run(":3" + nodeID)
+		err := r.Run(":3" + nodeID)
 		if err != nil {
 			log.Panic(err)
 			return
