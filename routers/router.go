@@ -127,6 +127,17 @@ func (s *Server) createWallet(c *gin.Context) {
 }
 
 func (s *Server) createBlockchain(c *gin.Context) {
+	if s.bch.DBExists() {
+		c.JSON(http.StatusOK, Response{
+			Success: true,
+			Data: gin.H{
+				"success": true,
+				"data":    "blockchain already exists",
+			},
+		})
+		return
+	}
+
 	address := c.Param("address")
 	nodeId := c.Param("nodeId")
 	s.bch.CreateBlockchain(address, nodeId)

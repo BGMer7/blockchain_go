@@ -3,10 +3,11 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/boltdb/bolt"
 	"log"
 	"mse/internal/blockchain"
 	"mse/internal/wallet"
+
+	"github.com/boltdb/bolt"
 )
 
 type BlockchainHandler struct{}
@@ -33,6 +34,14 @@ func (h *BlockchainHandler) CreateBlockchain(address, nodeID string) {
 	fmt.Println("Done!")
 }
 
+func (h *BlockchainHandler) DBExists() bool {
+	if !blockchain.CheckBlockchainExists() {
+		fmt.Println("No blockchain found. Create one first.")
+		return false
+	}
+	return true
+}
+
 // GetLastTransaction retrieves the most recent transaction from the blockchain
 func (h *BlockchainHandler) GetLastTransaction(bc *blockchain.Blockchain) *blockchain.Transaction {
 	iter := bc.Iterator()
@@ -57,7 +66,13 @@ func (h *BlockchainHandler) GetLastTransaction(bc *blockchain.Blockchain) *block
 }
 
 func (h *BlockchainHandler) PrintChain(nodeID string) json.RawMessage {
-	bc := blockchain.NewBlockchain(nodeID)
+	bc := blockchain.GetBlockchain(nodeID)
+	if bc == nil {
+		// Return an empty JSON array if blockchain doesn't exist
+		emptyJSON, _ := json.Marshal(map[string]interface{}{})
+		return json.RawMessage(emptyJSON)
+	}
+
 	defer func(DB *bolt.DB) {
 		err := DB.Close()
 		if err != nil {
@@ -71,6 +86,9 @@ func (h *BlockchainHandler) PrintChain(nodeID string) json.RawMessage {
 
 	for {
 		block := bci.Next()
+		if block == nil {
+			break
+		}
 
 		blockInfo := map[string]interface{}{
 			"hash":          fmt.Sprintf("%x", block.Hash),

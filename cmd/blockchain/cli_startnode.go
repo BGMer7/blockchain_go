@@ -3,53 +3,31 @@ package main
 import (
 	"fmt"
 	"log"
-	"mse/internal/network"
-	"mse/internal/wallet"
 	"mse/routers"
 	"os"
+	"path/filepath"
 )
 
-func (cli *CLI) startNode(minerAddress string) {
-	fmt.Printf("Starting node %s\n", cli.nodeID)
-
-	// 删除 data 文件夹
+func (cli *CLI) startNode(minerAddress string, nodeID string) {
+	// 删除特定节点ID对应的数据库和数据文件
 	dataDir := "./data"
-	if _, err := os.Stat(dataDir); !os.IsNotExist(err) {
-		err := os.RemoveAll(dataDir)
+	datFile := filepath.Join(dataDir, fmt.Sprintf("wallet_%s.dat", nodeID))
+
+	// 删除数据文件
+	if _, err := os.Stat(datFile); !os.IsNotExist(err) {
+		err := os.Remove(datFile)
 		if err != nil {
-			log.Printf("Error removing data directory: %v", err)
+			log.Printf("Error removing data file: %v", err)
 		} else {
-			fmt.Println("Removed existing data directory")
+			fmt.Printf("Removed data file for node %s\n", nodeID)
 		}
 	}
 
-	// 重新创建 data 文件夹
-	err := os.MkdirAll(dataDir, 0755)
+	server := routers.NewServer()
+	r := server.SetupRouter()
+	err := r.Run(":3" + nodeID)
 	if err != nil {
-		log.Printf("Error creating data directory: %v", err)
+		log.Panic(err)
+		return
 	}
-
-	if len(minerAddress) > 0 {
-		if !wallet.ValidateAddress(minerAddress) {
-			log.Panic("Wrong miner address!")
-		}
-		fmt.Println("Mining is on. Address to receive rewards: ", minerAddress)
-	}
-
-	// 启动 HTTP 服务器
-	go func() {
-		nodeID := os.Getenv("NODE_ID")
-		if nodeID == "" {
-			log.Fatal("NODE_ID env. var is not set!")
-		}
-		server := routers.NewServer()
-		r := server.SetupRouter()
-		fmt.Printf("Starting HTTP server on port 3%s\n", nodeID)
-		if err := r.Run(":3" + nodeID); err != nil {
-			log.Panic(err)
-		}
-	}()
-
-	// 启动网络节点服务
-	network.StartServer(cli.nodeID, minerAddress)
 }

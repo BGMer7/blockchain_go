@@ -4,9 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"mse/routers"
 	"os"
-	"path/filepath"
 )
 
 // CLI responsible for processing command line arguments
@@ -148,39 +146,6 @@ func (cli *CLI) Run() {
 			os.Exit(1)
 		}
 
-		// 删除特定节点ID对应的数据库和数据文件
-		dataDir := "./data"
-		dbFile := filepath.Join(dataDir, fmt.Sprintf("blockchain_%s.db", nodeID))
-		datFile := filepath.Join(dataDir, fmt.Sprintf("wallet_%s.dat", nodeID))
-
-		// 删除数据库文件
-		if _, err := os.Stat(dbFile); !os.IsNotExist(err) {
-			err := os.Remove(dbFile)
-			if err != nil {
-				log.Printf("Error removing database file: %v", err)
-			} else {
-				fmt.Printf("Removed database file for node %s\n", nodeID)
-			}
-		}
-
-		// 删除数据文件
-		if _, err := os.Stat(datFile); !os.IsNotExist(err) {
-			err := os.Remove(datFile)
-			if err != nil {
-				log.Printf("Error removing data file: %v", err)
-			} else {
-				fmt.Printf("Removed data file for node %s\n", nodeID)
-			}
-		}
-
-		server := routers.NewServer()
-		r := server.SetupRouter()
-		err := r.Run(":3" + nodeID)
-		if err != nil {
-			log.Panic(err)
-			return
-		}
-
-		cli.startNode(*startNodeMiner)
+		cli.startNode(*startNodeMiner, nodeID)
 	}
 }

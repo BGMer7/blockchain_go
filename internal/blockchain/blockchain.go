@@ -12,7 +12,7 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-const dbFile = "data/blockchain_%s.db"
+const dbFileName = "blockchain.db"
 const blocksBucket = "blocks"
 const genesisCoinbaseData = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
 
@@ -24,29 +24,27 @@ type Blockchain struct {
 
 // CreateBlockchain creates a new blockchain DB
 func CreateBlockchain(address, nodeID string) *Blockchain {
-	dbFile := fmt.Sprintf(dbFile, nodeID)
-	
 	// 确保数据目录存在
 	if err := os.MkdirAll("data", 0755); err != nil {
 		log.Panic(err)
 	}
 
-	if dbExists(dbFile) {
+	if dbExists(dbFileName) {
 		fmt.Println("Blockchain already exists.")
 		os.Exit(1)
 	}
 
 	var tip []byte
 
-	cbtx := NewCoinbaseTX(address, genesisCoinbaseData)
-	genesis := NewGenesisBlock(cbtx)
-
-	db, err := bolt.Open(dbFile, 0600, nil)
+	db, err := bolt.Open(dbFileName, 0600, nil)
 	if err != nil {
 		log.Panic(err)
 	}
 
 	err = db.Update(func(tx *bolt.Tx) error {
+		cbtx := NewCoinbaseTX(address, genesisCoinbaseData)
+		genesis := NewGenesisBlock(cbtx)
+
 		b, err := tx.CreateBucket([]byte(blocksBucket))
 		if err != nil {
 			log.Panic(err)
@@ -61,29 +59,37 @@ func CreateBlockchain(address, nodeID string) *Blockchain {
 		if err != nil {
 			log.Panic(err)
 		}
+
 		tip = genesis.Hash
 
 		return nil
 	})
+
 	if err != nil {
 		log.Panic(err)
 	}
 
-	bc := Blockchain{tip, db}
+	bc := Blockchain{
+		tip: tip,
+		DB:  db,
+	}
 
 	return &bc
 }
 
+func CheckBlockchainExists() bool {
+	return dbExists(dbFileName)
+}
+
 // NewBlockchain creates a new Blockchain with genesis Block
 func NewBlockchain(nodeID string) *Blockchain {
-	dbFile := fmt.Sprintf(dbFile, nodeID)
-	if dbExists(dbFile) == false {
+	if !dbExists(dbFileName) {
 		fmt.Println("No existing blockchain found. Create one first.")
 		os.Exit(1)
 	}
 
 	var tip []byte
-	db, err := bolt.Open(dbFile, 0600, nil)
+	db, err := bolt.Open(dbFileName, 0600, nil)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -98,9 +104,19 @@ func NewBlockchain(nodeID string) *Blockchain {
 		log.Panic(err)
 	}
 
-	bc := Blockchain{tip, db}
+	bc := Blockchain{
+		tip: tip,
+		DB:  db,
+	}
 
 	return &bc
+}
+
+func GetBlockchain(nodeID string) *Blockchain {
+	if !dbExists(dbFileName) {
+		return nil
+	}
+	return NewBlockchain(nodeID)
 }
 
 // AddBlock saves the block into the blockchain
