@@ -12,7 +12,7 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-const dbFileName = "blockchain.db"
+const dbFileName = "data/blockchain.db"
 const blocksBucket = "blocks"
 const genesisCoinbaseData = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
 
