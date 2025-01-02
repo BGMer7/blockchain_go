@@ -113,7 +113,7 @@ func (s *Server) printChain(c *gin.Context) {
 	fmt.Println("nodeId: ", nodeId)
 
 	// 检查区块链是否存在
-	if !s.bch.DBExists(s.nodeID) {
+	if !s.bch.DBExistsGenesis(s.nodeID) {
 		c.JSON(http.StatusBadRequest, Response{
 			Success: false,
 			Error:   "No blockchain found. Create one first.",
@@ -146,12 +146,12 @@ func (s *Server) createWallet(c *gin.Context) {
 func (s *Server) createBlockchain(c *gin.Context) {
 	nodeId := c.Param("nodeId")
 
-	if s.bch.DBExists(nodeId) {
+	if s.bch.DBExistsGenesis(nodeId) {
 		c.JSON(http.StatusOK, Response{
 			Success: true,
 			Data: gin.H{
 				"success": true,
-				"data":    "blockchain already exists",
+				"data":    "创世区块已存在，无需重复创建。",
 			},
 		})
 		return
@@ -255,7 +255,7 @@ func (s *Server) getLastTransaction(c *gin.Context) {
 // startP2PNetwork 启动 P2P 网络
 func (s *Server) startP2PNetwork(c *gin.Context) {
 	// 检查区块链是否存在
-	if !s.bch.DBExists(s.nodeID) {
+	if !s.bch.DBExistsGenesis(s.nodeID) {
 		c.JSON(http.StatusBadRequest, Response{
 			Success: false,
 			Error:   "No blockchain found. Create one first.",

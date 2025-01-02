@@ -44,6 +44,14 @@ func (h *BlockchainHandler) DBExists(nodeID string) bool {
 	return true
 }
 
+func (h *BlockchainHandler) DBExistsGenesis(nodeID string) bool {
+	if _, err := os.Stat("./data/blockchain_genesis.db"); os.IsNotExist(err) {
+		fmt.Println("No blockchain found. Create one first.")
+		return false
+	}
+	return true
+}
+
 // GetLastTransaction retrieves the most recent transaction from the blockchain
 func (h *BlockchainHandler) GetLastTransaction(bc *blockchain.Blockchain) *blockchain.Transaction {
 	iter := bc.Iterator()
