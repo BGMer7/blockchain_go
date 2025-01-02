@@ -111,6 +111,16 @@ func (s *Server) getBalance(c *gin.Context) {
 func (s *Server) printChain(c *gin.Context) {
 	nodeId := c.Param("nodeId")
 	fmt.Println("nodeId: ", nodeId)
+
+	// 检查区块链是否存在
+	if !s.bch.DBExists(s.nodeID) {
+		c.JSON(http.StatusBadRequest, Response{
+			Success: false,
+			Error:   "No blockchain found. Create one first.",
+		})
+		return
+	}
+
 	chain := s.bch.PrintChain(nodeId)
 	c.JSON(http.StatusOK, Response{
 		Success: true,
