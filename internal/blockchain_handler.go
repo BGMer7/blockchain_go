@@ -36,7 +36,7 @@ func (h *BlockchainHandler) CreateBlockchain(address, nodeID string) {
 }
 
 func (h *BlockchainHandler) DBExists(nodeID string) bool {
-	dbFile := fmt.Sprintf("blockchain_%s.db", nodeID)
+	dbFile := fmt.Sprintf("./data/blockchain_%s.db", nodeID)
 	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
 		fmt.Println("No blockchain found. Create one first.")
 		return false
