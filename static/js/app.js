@@ -61,7 +61,7 @@ document.getElementById('createBlockchainBtn').addEventListener('click', async (
         const result = await response.json();
         document.getElementById('blockchainResult').innerHTML = result.success 
             ? result.data.data 
-            : '区块链创建失败';
+            : '区块链创建失败:' + result.error;
     } catch (error) {
         document.getElementById('blockchainResult').innerHTML = `错误: ${error.message}`;
     }
@@ -219,5 +219,25 @@ document.getElementById('latestTxBtn').addEventListener('click', async () => {
                 错误: ${error.message}
             </div>
         `;
+    }
+});
+
+// 启动P2P网络
+document.getElementById('startP2PBtn').addEventListener('click', async () => {
+    try {
+        const response = await fetch(`${BASE_URL}/p2p/start/${NODE_ID}`, {
+            method: 'POST'
+        });
+        const result = await response.json();
+        const resultDiv = document.getElementById('p2pResult');
+        
+        if (result.success) {
+            resultDiv.innerHTML = `<div class="alert alert-success">P2P网络启动成功</div>`;
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger">错误: ${result.error}</div>`;
+        }
+    } catch (error) {
+        document.getElementById('p2pResult').innerHTML = 
+            `<div class="alert alert-danger">启动P2P网络时发生错误: ${error.message}</div>`;
     }
 });

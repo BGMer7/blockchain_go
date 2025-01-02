@@ -20,7 +20,7 @@ const commandLength = 12
 
 var nodeAddress string
 var miningAddress string
-var KnownNodes = []string{"localhost:3000"}
+var KnownNodes = []string{"localhost:33000"}
 var blocksInTransit = [][]byte{}
 var mempool = make(map[string]blockchain.Transaction)
 
@@ -164,10 +164,14 @@ func SendTx(addr string, tnx *blockchain.Transaction) {
 }
 
 func sendVersion(addr string, bc *blockchain.Blockchain) {
+	log.Printf("Sending version info to %s", addr)
 	bestHeight := bc.GetBestHeight()
+	log.Printf("Local best height: %d", bestHeight)
+
 	payload := utils.GobEncode(verzion{nodeVersion, bestHeight, nodeAddress})
 	request := append(commandToBytes("version"), payload...)
 
+	log.Printf("Version details - Version: %d, BestHeight: %d, From: %s", nodeVersion, bestHeight, nodeAddress)
 	sendData(addr, request)
 }
 
@@ -388,12 +392,16 @@ func handleVersion(request []byte, bc *blockchain.Blockchain) {
 }
 
 func handleConnection(conn net.Conn, bc *blockchain.Blockchain) {
+	log.Printf("New connection from %s", conn.RemoteAddr())
+
 	request, err := ioutil.ReadAll(conn)
 	if err != nil {
-		log.Panic(err)
+		log.Printf("Error reading connection: %v", err)
+		return
 	}
-	command := bytesToCommand(request[:commandLength])
-	fmt.Printf("Received %s command\n", command)
+
+	command := bytesToCommand(extractCommand(request))
+	log.Printf("Received %s command from %s", command, conn.RemoteAddr())
 
 	switch command {
 	case "addr":
@@ -418,15 +426,23 @@ func handleConnection(conn net.Conn, bc *blockchain.Blockchain) {
 }
 
 func StartServer(nodeID, minerAddress string) {
-	nodeAddress = fmt.Sprintf("localhost:%s", nodeID)
+
+	port := "3" + nodeID
+	log.Printf("Starting P2P server on port %s...", port)
+
+	nodeAddress = fmt.Sprintf("localhost:%s", port)
 	miningAddress = minerAddress
+	log.Printf("Node address: %s, Mining address: %s", nodeAddress, miningAddress)
+
 	ln, err := net.Listen(protocol, nodeAddress)
 	if err != nil {
-		log.Panic(err)
+		log.Printf("Failed to start server: %v", err)
+		return
 	}
-	defer ln.Close()
+	log.Printf("P2P Server is listening on %s", nodeAddress)
 
 	bc := blockchain.NewBlockchain(nodeID)
+	log.Printf("xxxxx %s", "dfasdfaf")
 
 	if nodeAddress != KnownNodes[0] {
 		sendVersion(KnownNodes[0], bc)

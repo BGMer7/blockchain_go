@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"mse/internal"
+	"mse/internal/network"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -22,20 +23,23 @@ type Response struct {
 
 // Server structure
 type Server struct {
-	nodeID string
-	bch    *internal.BlockchainHandler
-	wh     *internal.WalletHandler
+	nodeID       string
+	minerAddress string
+
+	bch *internal.BlockchainHandler
+	wh  *internal.WalletHandler
 }
 
-func NewServer() *Server {
+func NewServer(minerAddress string) *Server {
 	nodeID := os.Getenv("NODE_ID")
 	if nodeID == "" {
 		log.Fatal("NODE_ID env. var is not set!")
 	}
 	return &Server{
-		wh:     internal.NewWalletHandler(),
-		bch:    internal.NewBlockchainHandler(),
-		nodeID: nodeID,
+		wh:           internal.NewWalletHandler(),
+		bch:          internal.NewBlockchainHandler(),
+		nodeID:       nodeID,
+		minerAddress: minerAddress,
 	}
 }
 
@@ -71,6 +75,9 @@ func (s *Server) SetupRouter() *gin.Engine {
 
 		// step8:
 		api.GET("/txCount/:nodeId", s.reindexUTXO)
+
+		// 启动 P2P 网络
+		api.POST("/p2p/start/:nodeId", s.startP2PNetwork)
 	}
 
 	// 显式处理静态文件
@@ -127,7 +134,9 @@ func (s *Server) createWallet(c *gin.Context) {
 }
 
 func (s *Server) createBlockchain(c *gin.Context) {
-	if s.bch.DBExists() {
+	nodeId := c.Param("nodeId")
+
+	if s.bch.DBExists(nodeId) {
 		c.JSON(http.StatusOK, Response{
 			Success: true,
 			Data: gin.H{
@@ -139,7 +148,14 @@ func (s *Server) createBlockchain(c *gin.Context) {
 	}
 
 	address := c.Param("address")
-	nodeId := c.Param("nodeId")
+	if address == "" {
+		c.JSON(http.StatusBadRequest, Response{
+			Success: false,
+			Error:   "address cannot be empty",
+		})
+		return
+	}
+
 	s.bch.CreateBlockchain(address, nodeId)
 	c.JSON(http.StatusOK, Response{
 		Success: true,
@@ -223,5 +239,25 @@ func (s *Server) getLastTransaction(c *gin.Context) {
 		"data": gin.H{
 			"transaction": txInfo,
 		},
+	})
+}
+
+// startP2PNetwork 启动 P2P 网络
+func (s *Server) startP2PNetwork(c *gin.Context) {
+	// 检查区块链是否存在
+	if !s.bch.DBExists(s.nodeID) {
+		c.JSON(http.StatusBadRequest, Response{
+			Success: false,
+			Error:   "No blockchain found. Create one first.",
+		})
+		return
+	}
+
+	// 启动 P2P 网络服务器
+	go network.StartServer(s.nodeID, s.minerAddress)
+
+	c.JSON(http.StatusOK, Response{
+		Success: true,
+		Data:    "P2P network started successfully",
 	})
 }

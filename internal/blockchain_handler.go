@@ -6,6 +6,7 @@ import (
 	"log"
 	"mse/internal/blockchain"
 	"mse/internal/wallet"
+	"os"
 
 	"github.com/boltdb/bolt"
 )
@@ -34,8 +35,9 @@ func (h *BlockchainHandler) CreateBlockchain(address, nodeID string) {
 	fmt.Println("Done!")
 }
 
-func (h *BlockchainHandler) DBExists() bool {
-	if !blockchain.CheckBlockchainExists() {
+func (h *BlockchainHandler) DBExists(nodeID string) bool {
+	dbFile := fmt.Sprintf("blockchain_%s.db", nodeID)
+	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
 		fmt.Println("No blockchain found. Create one first.")
 		return false
 	}
@@ -66,7 +68,7 @@ func (h *BlockchainHandler) GetLastTransaction(bc *blockchain.Blockchain) *block
 }
 
 func (h *BlockchainHandler) PrintChain(nodeID string) json.RawMessage {
-	bc := blockchain.GetBlockchain(nodeID)
+	bc := blockchain.NewBlockchain(nodeID)
 	if bc == nil {
 		// Return an empty JSON array if blockchain doesn't exist
 		emptyJSON, _ := json.Marshal(map[string]interface{}{})

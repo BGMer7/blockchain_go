@@ -23,7 +23,8 @@ func (cli *CLI) startNode(minerAddress string, nodeID string) {
 		}
 	}
 
-	server := routers.NewServer()
+	// 启动 HTTP 服务器
+	server := routers.NewServer(minerAddress)
 	r := server.SetupRouter()
 	err := r.Run(":3" + nodeID)
 	if err != nil {
