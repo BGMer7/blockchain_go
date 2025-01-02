@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 
@@ -63,6 +64,39 @@ func CreateBlockchain(address, nodeID string) *Blockchain {
 		log.Panic(err)
 	}
 
+	// 检查是否需要创建genesis.db
+	genesisFile := "./data/blockchain_genesis.db"
+	if _, err := os.Stat(genesisFile); os.IsNotExist(err) {
+		// 确保数据库已关闭
+		db.Close()
+
+		// 复制当前数据库为genesis.db
+		srcFile, err := os.Open(dbFile)
+		if err != nil {
+			log.Printf("Error opening source file: %v", err)
+		} else {
+			defer srcFile.Close()
+
+			destFile, err := os.Create(genesisFile)
+			if err != nil {
+				log.Printf("Error creating genesis file: %v", err)
+			} else {
+				defer destFile.Close()
+
+				_, err = io.Copy(destFile, srcFile)
+				if err != nil {
+					log.Printf("Error copying to genesis file: %v", err)
+				}
+			}
+		}
+
+		// 重新打开当前数据库
+		db, err = bolt.Open(dbFile, 0600, nil)
+		if err != nil {
+			log.Panic(err)
+		}
+	}
+
 	bc := Blockchain{tip, db}
 
 	return &bc
@@ -71,9 +105,35 @@ func CreateBlockchain(address, nodeID string) *Blockchain {
 // NewBlockchain creates a new Blockchain with genesis Block
 func NewBlockchain(nodeID string) *Blockchain {
 	dbFile := fmt.Sprintf(dbFile, nodeID)
-	if dbExists(dbFile) == false {
-		fmt.Println("No existing blockchain found. Create one first.")
-		os.Exit(1)
+	if !dbExists(dbFile) {
+		// 检查是否存在genesis区块链
+		genesisFile := "./data/blockchain_genesis.db"
+		if _, err := os.Stat(genesisFile); os.IsNotExist(err) {
+			fmt.Println("No existing blockchain found. Create one first.")
+			os.Exit(1)
+		}
+		// 从genesis复制一份
+		srcFile, err := os.Open(genesisFile)
+		if err != nil {
+			log.Printf("Error opening genesis file: %v", err)
+			os.Exit(1)
+		}
+		defer srcFile.Close()
+
+		destFile, err := os.Create(dbFile)
+		if err != nil {
+			log.Printf("Error creating blockchain file: %v", err)
+			os.Exit(1)
+		}
+		defer destFile.Close()
+
+		_, err = io.Copy(destFile, srcFile)
+		if err != nil {
+			log.Printf("Error copying from genesis: %v", err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("Copied blockchain from genesis for node %s\n", nodeID)
 	}
 
 	var tip []byte
