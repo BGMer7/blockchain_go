@@ -46,6 +46,11 @@ NODE_ID=3000 go run ./cmd/blockchain/ send -from <发送方地址> -to <接收�
 NODE_ID=3000 go run ./cmd/blockchain/ getbalance -address <钱包地址>
 ```
 
+### 5. 一键启动界面
+```bash
+./start_nodes.sh
+```
+
 ## 注意事项
 - 每个操作都需要指定 `NODE_ID`
 - 钱包和区块链数据默认存储在 `data/` 目录
